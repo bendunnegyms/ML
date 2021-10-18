@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import KFold, LogisticRegression
+from sklearn.linear_model import LogisticRegression
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
 from sklearn.preprocessing import PolynomialFeatures
 from matplotlib.colors import ListedColormap
 from mpl_toolkits import mplot3d
@@ -22,7 +22,7 @@ for row in data:
 data_one = data[:index]
 data_two = data[index:]
 dataset_id_two = data_two[0]
-data_two[1:]
+data_two = data_two[1:]
 
 print("DATASET ONE ID: {}".format(dataset_id_one))
 print("DATASET TWO ID: {}".format(dataset_id_two))
@@ -57,4 +57,14 @@ for (row_one, row_two) in zip(data_one,data_two):
 
 # -- QUESTION ONE --
 # a
+C_values = [0.01, 0.1, 1, 10, 100]
+poly_orders = [1,2,3,4,5,6]
 
+kf = KFold(n_splits=5)
+
+for train, test in kf.split(features_one):
+    for c in C_values:
+        for p in poly_orders:
+            x_poly = PolynomialFeatures(p).fit_transform(np.array(features_one)[train])
+            model = LogisticRegression(penalty='l2',C=c, max_iter=500).fit(x_poly,np.array(label_one)[train])
+            
