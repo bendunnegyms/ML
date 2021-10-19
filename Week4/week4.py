@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
-import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import PolynomialFeatures
+from sklearn.metrics import accuracy_score
 from matplotlib.colors import ListedColormap
+import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 
 # -- FORMAT DATASET --
@@ -62,9 +63,29 @@ poly_orders = [1,2,3,4,5,6]
 
 kf = KFold(n_splits=5)
 
-for train, test in kf.split(features_one):
-    for c in C_values:
-        for p in poly_orders:
+dataframe_values = []
+for c in C_values:
+    for p in poly_orders:
+        split_vals = []
+        for train, test in kf.split(features_one):
             x_poly = PolynomialFeatures(p).fit_transform(np.array(features_one)[train])
+            x_poly_test = PolynomialFeatures(p).fit_transform(np.array(features_one)[test])
             model = LogisticRegression(penalty='l2',C=c, max_iter=500).fit(x_poly,np.array(label_one)[train])
-            
+            predictions = model.predict(x_poly_test)
+            accuracy = accuracy_score(np.array(label_one)[test], predictions, normalize=True)
+            split_vals.append([c,p,accuracy])
+        split_vals = np.sum(np.array(split_vals), axis=0)/5
+        dataframe_values.append(split_vals)
+
+df_indexes = C_values
+df_columns = poly_orders
+accuracy = []
+for c in C_values:
+    accuracy_row = []
+    for e in dataframe_values:
+        if c == e[0]:
+            accuracy_row.append(e[2])
+    accuracy.append(accuracy_row)
+
+dataframe = pd.DataFrame(accuracy, index=df_indexes, columns=df_columns)
+print(dataframe)
