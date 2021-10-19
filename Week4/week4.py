@@ -64,7 +64,10 @@ poly_orders = [1,2,3,4,5,6]
 kf = KFold(n_splits=5)
 
 dataframe_values = []
+subplot_index = 1
 for c in C_values:
+    accuracy_stds = []
+    accuracy_for_plot = []
     for p in poly_orders:
         split_vals = []
         for train, test in kf.split(features_one):
@@ -74,9 +77,19 @@ for c in C_values:
             predictions = model.predict(x_poly_test)
             accuracy = accuracy_score(np.array(label_one)[test], predictions, normalize=True)
             split_vals.append([c,p,accuracy])
+        temp = split_vals
         split_vals = np.sum(np.array(split_vals), axis=0)/5
+        accuracy_for_plot.append(split_vals[2])
         dataframe_values.append(split_vals)
+        accuracy_stds.append(np.array([x[2] for x in temp]).std())
 
+    plt.subplot(3,2,subplot_index)
+    plt.grid()
+    plt.title("C-Value - {}".format(c))
+    plt.errorbar(poly_orders,accuracy_for_plot,accuracy_stds)
+    subplot_index += 1
+
+plt.show()
 df_indexes = C_values
 df_columns = poly_orders
 accuracy = []
@@ -89,3 +102,4 @@ for c in C_values:
 
 dataframe = pd.DataFrame(accuracy, index=df_indexes, columns=df_columns)
 print(dataframe)
+
