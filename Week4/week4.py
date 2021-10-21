@@ -62,7 +62,7 @@ for (row_one, row_two) in zip(data_one,data_two):
 # Acquire the accuracy and predictions of each Logistic Regression model configured with C and polynomial orders.
 
 
-C_values = [0.01, 0.1, 1, 10, 100]
+C_values = [0.01, 0.1, 1, 10, 100, 1000]
 poly_orders = [1,2,3,4,5,6]
 dataframe_values = []
 all_accuracy_stds = []
@@ -88,12 +88,12 @@ for c in C_values:
         for train, test in KFold(n_splits=5).split(features_one):
             x_poly = PolynomialFeatures(p).fit_transform(np.array(features_one)[train])
             x_poly_test = PolynomialFeatures(p).fit_transform(np.array(features_one)[test])
-            model = LogisticRegression(penalty='l2',C=c, max_iter=500).fit(x_poly,np.array(label_one)[train])
+            model = LogisticRegression(penalty='l2',C=c, max_iter=1000).fit(x_poly,np.array(label_one)[train])
             prediction = model.predict(x_poly_test)
             predictions.append(prediction)
             accuracy = accuracy_score(np.array(label_one)[test], prediction, normalize=True)
             split_vals.append([c,p,accuracy])
-            if (c==0.01 or c==1 or c == 100) and not plotted:
+            if (c==1 or c == 10 or c == 100 or c==1000) and p == 2 and not plotted:
                 # Plot each prediction
                 categories = [x if x != -1 else 0 for x in np.array(label_one)[train]]
                 plot =  plt.scatter(np.array(f1_one)[train], np.array(f2_one)[train], c=categories, cmap=colormap)
@@ -104,7 +104,7 @@ for c in C_values:
                 pred_categories = [x if x != -1 else 0 for x in prediction]
                 pred_plot = plt.scatter(np.array(f1_one)[test],np.array(f2_one)[test], c=pred_categories, cmap=pred_colormap, marker="x")
                 # plt.show()
-            plotted=True
+                plotted=True
         accuracy_stds.append(np.array([x[2] for x in split_vals]).std())
         split_vals = np.array(split_vals).mean(axis=0)
         accuracy_for_plot.append(split_vals[2])
@@ -126,24 +126,26 @@ c_index = 0
 
 
 for accuracy,std in zip(all_accuracies_for_plots,all_accuracy_stds):
-    plt.subplot(3,2,subplot_index)
+    plt.subplot(4,2,subplot_index)
     plt.grid()
     plt.title("C-Value - {}".format(C_values[c_index]))
     plt.errorbar(poly_orders,accuracy,std)
     subplot_index += 1
     c_index += 1
 
-# plt.show()
+plt.show()
 print("Accuracy of selected Logistic Regression Model: {}".format(selected_logreg_model_accuracy))
 print(selected_logreg_model)
+print(selected_lr_poly_order)
 # -- End of plotting accuracies
 
 # b
 # kNN 
 selected_knn_model = None
 selected_knn_model_accuracy = 0
-k_values = [3,4,5,6,7,8,9,10]
+k_values = [3,4,5,6,7,8,9,10,15,20,25,30]
 subplot_index = 1
+knn_accuracies = []
 for k in k_values:
     accuracies = []
     plotted = False
@@ -152,7 +154,7 @@ for k in k_values:
         prediction = model.predict(np.array(features_one)[test])
         accuracy = accuracy_score(np.array(label_one)[test], prediction, normalize=True)
         accuracies.append(accuracy)
-        if not plotted:
+        if k==9 and not plotted:
             categories = [x if x != -1 else 0 for x in np.array(label_one)[train]]
             plot =  plt.scatter(np.array(f1_one)[train], np.array(f2_one)[train], c=categories, cmap=colormap)
             plt.title("Accuracy: {}\nK-value: {}".format(accuracy,k))
@@ -163,11 +165,20 @@ for k in k_values:
             pred_plot = plt.scatter(np.array(f1_one)[test],np.array(f2_one)[test], c=pred_categories, cmap=pred_colormap, marker="x")
             # plt.show()
         plotted = True
-    accuracy = np.array(accuracies).mean()   
+    accuracy = np.array(accuracies).mean()
+    knn_accuracies.append(accuracy)   
     if selected_knn_model == None or accuracy > selected_knn_model_accuracy:
             selected_knn_model = model
             selected_knn_model_accuracy = accuracy
     print("K-values: {} Accuracy: {}".format(k,np.array(accuracies).mean()))
+
+plt.clf()
+plt.cla()
+
+plt.scatter(k_values,knn_accuracies)
+plt.xlabel("K-values")
+plt.ylabel("Accuracies")
+plt.show()
 
 print("Accuracy of knn model: {}".format(selected_knn_model_accuracy))
 print(selected_knn_model)
@@ -208,7 +219,7 @@ plt.plot(fpr,tpr, color="green")
 plt.legend(["KNN Classifier", "Logistic Regression", "Baseline Classifier"])
 plt.xlabel("False Positive Rate")
 plt.ylabel("True Positive Rate")
-# plt.show()
+plt.show()
 
 # --- SECOND DATASET ---
 
@@ -249,7 +260,7 @@ for c in C_values:
             predictions.append(prediction)
             accuracy = accuracy_score(np.array(label_two)[test], prediction, normalize=True)
             split_vals.append([c,p,accuracy])
-            if (c==0.01 or c==1 or c == 100) and not plotted:
+            if (c==0.01 or c==1 or c == 100) and p==1 and not plotted:
                 # Plot each prediction
                 categories = [x if x != -1 else 0 for x in np.array(label_two)[train]]
                 plot =  plt.scatter(np.array(f1_two)[train], np.array(f2_two)[train], c=categories, cmap=colormap)
@@ -291,6 +302,8 @@ for accuracy,std in zip(all_accuracies_for_plots,all_accuracy_stds):
 
 plt.show()
 print("Accuracy of selected Logistic Regression Model: {}".format(selected_logreg_model_accuracy))
+print(selected_logreg_model)
+print(selected_lr_poly_order)
 # -- End of plotting accuracies
 
 # b
@@ -307,7 +320,7 @@ for k in k_values:
         prediction = model.predict(np.array(features_two)[test])
         accuracy = accuracy_score(np.array(label_two)[test], prediction, normalize=True)
         accuracies.append(accuracy)
-        if not plotted:
+        if k==9 and not plotted:
             categories = [x if x != -1 else 0 for x in np.array(label_two)[train]]
             plot =  plt.scatter(np.array(f1_two)[train], np.array(f2_two)[train], c=categories, cmap=colormap)
             plt.title("Accuracy: {}\nK-value: {}".format(accuracy,k))
@@ -325,7 +338,7 @@ for k in k_values:
     print("K-values: {} Accuracy: {}".format(k,np.array(accuracies).mean()))
 
 print("Accuracy of knn model: {}".format(selected_knn_model_accuracy))
-
+print(selected_knn_model)
 # c
 # -- Calculate confusion matrix for both the kNN classifier and regression classifier
 
